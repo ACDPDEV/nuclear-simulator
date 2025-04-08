@@ -1,14 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Button } from "./ui/button";
+import React, { useEffect, useRef } from "react";
+import { Button } from "../components/ui/button";
+import { useTimerDispatch, useTimerState } from "../context/TimeContext";
 
 const Timer: React.FC = () => {
-  const [time, setTime] = useState<number>(0);
-  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const { time, isRunning } = useTimerState();
+  const dispatch = useTimerDispatch();
+
   const startTimeRef = useRef<number | null>(null);
   const animationRef = useRef<number | null>(null);
 
   const startStopTimer = () => {
-    setIsRunning((prev) => !prev);
+    dispatch({ type: "TOGGLE_RUNNING" });
   };
 
   useEffect(() => {
@@ -19,7 +21,10 @@ const Timer: React.FC = () => {
       const update = () => {
         if (startTimeRef.current !== null) {
           const elapsed = performance.now() - startTimeRef.current;
-          setTime(parseFloat((elapsed / 1000).toFixed(2)));
+          dispatch({
+            type: "SET_TIME",
+            payload: parseFloat((elapsed / 1000).toFixed(2)),
+          });
           animationRef.current = requestAnimationFrame(update);
         }
       };
