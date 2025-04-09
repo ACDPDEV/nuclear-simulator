@@ -11,3 +11,14 @@ export const radiationTypes: Record<RadiationType, RadiationInfo> = {
   gamma: { factor: 1, percentage: 0.05 },
   x: { factor: 1, percentage: 0.10 },
 };
+
+const enrichedUranium = {
+  activity: 1.8e5,
+  averageEnergy: 4.68,
+  qualityFactor: 20,
+};
+const irradiatedUranium = {
+  activity: 3.7e13,
+  averageEnergy: 0.75,
+  qualityFactor: 1,
+};

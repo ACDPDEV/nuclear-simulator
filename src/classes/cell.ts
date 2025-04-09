@@ -7,15 +7,15 @@ interface EmmiterType {
 }
 
 // Relación rem - estado celular
-// rem = [0; 50] -> healthy (#00FF00)
-// rem = [51; 200] -> damaged (#FF0000)
-// rem = [200; 500] -> mutated (#FF00FF)
-// rem >= 500 -> dead (#111111)
+// rem = [0; 50] -> healthy (#05df72)
+// rem = [51; 200] -> damaged (#ff8904)
+// rem = [200; 500] -> mutated (#8e51ff)
+// rem >= 500 -> dead (#292524)
 
 export class Cell {
   position: Vector2D;
   state: 'healthy' | 'damaged' | 'mutated' | 'dead' = 'healthy';
-  color: '#00ff00' | '#ff0000' | '#ff00ff' | '#111111' = '#00ff00';
+  color: '#05df72' | '#ff8904' | '#8e51ff' | '#292524' = '#05df72';
 
   constructor(x: number, y: number) {
     this.position = new Vector2D(x, y);
@@ -26,9 +26,9 @@ export class Cell {
     mass: number,
     tisularWeight: number,
     time: number, 
-    errorMargin: number = 0.5
+    randomMargin: number = 0.5
   ) {
-    const randomFactor = (Math.random() * 2 * errorMargin) - errorMargin;
+    const randomFactor = (Math.random() * 2 * randomMargin) - randomMargin;
     const dose = (emmiterType.activity * emmiterType.averageEnergy * 1.602e-13 * emmiterType.qualityFactor * 100 * time * tisularWeight) / mass;
     return dose * (1 + randomFactor);
   }
@@ -36,16 +36,16 @@ export class Cell {
   updateState(dose: number) {
     if (dose < 51) {
       this.state = 'healthy';
-      this.color = '#00ff00';
+      this.color = '#05df72';
     } else if (dose < 201) {
       this.state = 'damaged';
-      this.color = '#ff0000';
+      this.color = '#ff8904';
     } else if (dose < 501) {
       this.state = 'mutated';
-      this.color = '#ff00ff';
+      this.color = '#8e51ff';
     } else {
       this.state = 'dead';
-      this.color = '#111111';
+      this.color = '#292524';
     }
   }
   

@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogFooter,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -24,153 +25,206 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { MenuIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { usePropertiesSimulation } from "../context/PropertiesContext";
+import { useTimerDispatch } from "../context/TimeContext";
 
-// Definir el esquema de validación con Zod
+const calculateTissueWeight = (tissueType: string) => {
+  switch (tissueType) {
+    case "redBoneMarrow":
+      return 0.12;
+    case "lungs":
+      return 0.12;
+    case "stomach":
+      return 0.12;
+    case "breast":
+      return 0.12;
+    case "colon":
+      return 0.12;
+    case "liver":
+      return 0.05;
+    case "thyroid":
+      return 0.04;
+    case "skin":
+      return 0.01;
+    case "boneSurface":
+      return 0.01;
+    case "others":
+      return 0.12;
+  }
+};
+
 const formSchema = z.object({
-  capsuleType: z.enum(["Uranio enriquecido", "Uranio irradiado"], {
-    errorMap: () => ({ message: "Selecciona un tipo de cápsula válido." }),
-  }),
-  mass: z.number().min(1, "La masa debe ser mayor a 0."),
-  tissueWeight: z.number().min(1, "El peso tisular debe ser mayor a 0."),
-  errorMargin: z.number().min(0, "El margen de error no puede ser negativo."),
+  emmisorType: z
+    .string()
+    .regex(/enrichedUranium|irradiatedUranium/, "Opción inválida"),
+  mass: z.string().regex(/[0-9]+(\.[0-9]+)?/, "El valor debe ser numérico"),
+  tissueType: z
+    .string()
+    .regex(
+      /redBoneMarrow|lungs|stomach|breast|colon|liver|thyroid|skin|boneSurface|others/,
+      "Opción inválida"
+    ),
+  regenerationFactor: z
+    .string()
+    .regex(/[0-9]+(\.[0-9]+)?/, "El valor debe ser numérico"),
 });
 
-const CapsuleFormDialog = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+export function Menu() {
+  const { setConfig } = usePropertiesSimulation();
+  const dispatch = useTimerDispatch();
 
-  // Inicializar React Hook Form
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      capsuleType: "Uranio enriquecido",
-      mass: 0,
-      tissueWeight: 0,
-      errorMargin: 0,
-    },
   });
 
-  // Manejar el envío del formulario
-  const onSubmit = (data: any) => {
-    // Aquí puedes manejar los datos del formulario
-    console.log(data);
-    // Cerrar el diálogo después de enviar
-    setIsDialogOpen(false);
+  const resetTimer = () => {
+    dispatch({ type: "RESET" });
   };
 
+  // 2. Define a submit handler.
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    const emmisorType = values.emmisorType as
+      | "enrichedUranium"
+      | "irradiatedUranium";
+    const mass = Number(values.mass);
+    const tissueWeight = calculateTissueWeight(values.tissueType) as number;
+    const regenerationFactor = Number(values.regenerationFactor);
+
+    setConfig({
+      emmisorType,
+      mass,
+      tissueWeight,
+      regenerationFactor,
+    });
+
+    resetTimer();
+  }
+
   return (
-    <>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button>Configurar Cápsula</Button>
-        </DialogTrigger>
-
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Configuración de Cápsula</DialogTitle>
-          </DialogHeader>
-
-          <Form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <MenuIcon className="w-6 h-6" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Editar propiedades de la simulación</DialogTitle>
+          <DialogDescription>
+            Haz tus cambios aquí. Haz click en guardar cuando termines.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
-              control={control}
-              name="capsuleType"
+              control={form.control}
+              name="emmisorType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de cápsula</FormLabel>
-                  <FormControl>
-                    <Select {...field}>
+                  <FormLabel>Cápsula del reactor</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un tipo" />
+                        <SelectValue placeholder="Seleciona una opción" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Uranio enriquecido">
-                          Uranio enriquecido
-                        </SelectItem>
-                        <SelectItem value="Uranio irradiado">
-                          Uranio irradiado
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage>{errors.capsuleType?.message}</FormMessage>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="enrichedUranium">
+                        Uranio enriquecido al 5%
+                      </SelectItem>
+                      <SelectItem value="irradiatedUranium">
+                        Uranio irradiado
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
-              control={control}
+              control={form.control}
               name="mass"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Masa (g)</FormLabel>
+                  <FormLabel>Masa del tejido</FormLabel>
                   <FormControl>
                     <Input
+                      placeholder="eg: 23, 4e2, 1e-6"
                       type="number"
-                      placeholder="Masa de la cápsula"
                       {...field}
-                      className={errors.mass ? "border-red-500" : ""}
                     />
                   </FormControl>
-                  <FormMessage>{errors.mass?.message}</FormMessage>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
-              control={control}
-              name="tissueWeight"
+              control={form.control}
+              name="tissueType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Peso tisular (g)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Peso tisular"
-                      {...field}
-                      className={errors.tissueWeight ? "border-red-500" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage>{errors.tissueWeight?.message}</FormMessage>
+                  <FormLabel>Tipo de tejido</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleciona una opción" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="redBoneMarrow">
+                        Médula osea roja (0.12)
+                      </SelectItem>
+                      <SelectItem value="lungs">Pulmones (0.12)</SelectItem>
+                      <SelectItem value="stomach">Estómago (0.12)</SelectItem>
+                      <SelectItem value="breast">Mama (0.12)</SelectItem>
+                      <SelectItem value="colon">Colon (0.12)</SelectItem>
+                      <SelectItem value="liver">Hígado (0.05)</SelectItem>
+                      <SelectItem value="thyroid">Tiroides (0.04)</SelectItem>
+                      <SelectItem value="skin">Piel (0.01)</SelectItem>
+                      <SelectItem value="boneSurface">
+                        Superficie Ósea (0.01)
+                      </SelectItem>
+                      <SelectItem value="others">
+                        Otros tejidos (0.12)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
-              control={control}
-              name="errorMargin"
+              control={form.control}
+              name="regenerationFactor"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Margen de error (%)</FormLabel>
+                  <FormLabel>Factor de regeneración</FormLabel>
                   <FormControl>
                     <Input
+                      placeholder="eg: 1, 0.5, 0.25"
                       type="number"
-                      placeholder="Margen de error"
                       {...field}
-                      className={errors.errorMargin ? "border-red-500" : ""}
                     />
                   </FormControl>
-                  <FormMessage>{errors.errorMargin?.message}</FormMessage>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-
-            <DialogFooter>
-              <Button type="submit">Enviar</Button>
-              <Button type="button" onClick={() => setIsDialogOpen(false)}>
-                Cancelar
-              </Button>
-            </DialogFooter>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </>
+            <DialogClose>
+              <Button type="submit">Guardar</Button>
+            </DialogClose>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
-};
-
-export default CapsuleFormDialog;
+}

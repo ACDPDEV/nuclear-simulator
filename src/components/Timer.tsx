@@ -1,3 +1,4 @@
+import { Pause, Play, RotateCcw } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { Button } from "../components/ui/button";
 import { useTimerDispatch, useTimerState } from "../context/TimeContext";
@@ -11,6 +12,11 @@ const Timer: React.FC = () => {
 
   const startStopTimer = () => {
     dispatch({ type: "TOGGLE_RUNNING" });
+  };
+
+  const resetTimer = () => {
+    dispatch({ type: "RESET" });
+    startTimeRef.current = performance.now();
   };
 
   useEffect(() => {
@@ -44,10 +50,15 @@ const Timer: React.FC = () => {
   }, [isRunning]);
 
   return (
-    <div>
-      <div id="timeDisplay">Time: {time.toFixed(2)}s</div>
+    <div className="flex flex-row items-center gap-2">
+      <div id="timeDisplay" className="font-mono font-medium">
+        Tiempo: {time.toFixed(2)}s
+      </div>
       <Button id="startStopButton" onClick={startStopTimer}>
-        {isRunning ? "Stop" : "Start"}
+        {isRunning ? <Pause /> : <Play />}
+      </Button>
+      <Button id="resetButton" onClick={resetTimer} variant={"outline"}>
+        <RotateCcw className="w-4 h-4" />
       </Button>
     </div>
   );
